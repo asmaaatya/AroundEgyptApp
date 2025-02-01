@@ -42,6 +42,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.aroundegyptapp.R
 import com.example.aroundegyptapp.data.model.details.DetailsData
+import com.example.aroundegyptapp.ui.theme.Orange
 
 @Composable
 fun DetailsScreen(navController: NavController, itemId: String?, detailsViewModel: DetailsViewModel = hiltViewModel()) {
@@ -65,14 +66,14 @@ fun DetailsScreen(navController: NavController, itemId: String?, detailsViewMode
 
 
             Button(
-                onClick = { /* TODO: Handle click */ },
+                onClick = {  },
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 modifier = Modifier
                     .align(Alignment.Center)
                     .clip(RoundedCornerShape(12.dp))
             ) {
-                Text("EXPLORE NOW", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("EXPLORE NOW", color = Orange, fontWeight = FontWeight.Bold)
             }
             Row(
                 modifier = Modifier
@@ -127,7 +128,14 @@ fun ExperienceDetails(data: DetailsData,detailsViewModel: DetailsViewModel = hil
     }
     Column(modifier = Modifier.padding(start = 16.dp, top = 16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(data.title, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(data.title, fontSize = 22.sp, fontWeight = FontWeight.Bold
+                    , modifier = Modifier.padding(end = 10.dp))
+            Icon(
+                painter = painterResource(id = R.drawable.icon_share),
+                contentDescription = "Share",
+                modifier = Modifier.size(20.dp),
+                tint = Orange
+            )
             IconButton(
                 onClick = {
                     if (!isLiked) {
@@ -138,8 +146,7 @@ fun ExperienceDetails(data: DetailsData,detailsViewModel: DetailsViewModel = hil
                 Icon(
                     imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                     contentDescription = "Like",
-                    tint = if (isLiked) Color.Red else Color.Black,
-                    modifier = Modifier.padding(end = 8.dp)
+                    tint =  Orange
                 )
             }
 
@@ -153,7 +160,9 @@ fun ExperienceDetails(data: DetailsData,detailsViewModel: DetailsViewModel = hil
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -161,12 +170,20 @@ fun ExperienceDetails(data: DetailsData,detailsViewModel: DetailsViewModel = hil
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-
+    Text(
+       "Description",
+         fontSize = 22.sp, fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, top = 16.dp),
+        textAlign = TextAlign.Start
+    )
         Text(
             data.description,
             fontSize = 14.sp,
-            color = Color.Gray,
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             textAlign = TextAlign.Justify
         )
     }

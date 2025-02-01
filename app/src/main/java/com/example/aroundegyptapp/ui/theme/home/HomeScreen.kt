@@ -50,6 +50,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.app.com.example.aroundegyptapp.data.model.recommended.Data
 import com.example.aroundegyptapp.R
+import com.example.aroundegyptapp.ui.theme.Orange
 
 @Composable
 fun HomeScreen(navController: NavController) {
@@ -368,19 +369,19 @@ fun RecommendedListItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
 
             Text(
                 text = post.title,
-                fontSize = 20.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black,
             )
 
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+             modifier = Modifier.padding(start = 35.dp)
             ) {
                 IconButton(
                     onClick = {
@@ -392,8 +393,7 @@ fun RecommendedListItem(
                     Icon(
                         imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                         contentDescription = "Like",
-                        tint = if (isLiked) Color.Red else Color.Black,
-                        modifier = Modifier.padding(end = 8.dp)
+                        tint = Orange
                     )
                 }
 
@@ -408,140 +408,6 @@ fun RecommendedListItem(
     }
 }
 
-@Composable
-fun MostRecentListItem(
-    recent: com.example.aroundegyptapp.data.model.recent.Data, navController: NavController,
-    viewModel: HomeViewModel = hiltViewModel()
-) {
-    val likesMap by viewModel.likesMap.collectAsState()
-
-    var isLiked by remember { mutableStateOf(false) }
-    var likesCount by remember { mutableIntStateOf(recent.likes_no) }
-
-    LaunchedEffect(likesMap[recent.id]) {
-        likesMap[recent.id]?.let { updatedLikes ->
-            likesCount = updatedLikes
-            isLiked = true
-        }
-    }
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .clickable {
-            navController.navigate("details/${recent.id}")
-        }) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            AsyncImage(
-                model = recent.cover_photo,
-                contentDescription = "Background Image",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp),
-                contentScale = ContentScale.Crop
-            )
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.view_icon),
-                    contentDescription = "Views",
-                    modifier = Modifier.size(20.dp),
-                    tint = Color.White
-                )
-                Text(
-                    text = recent.views_no.toString(),
-                    fontSize = 12.sp,
-                    color = Color.White
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.gallery_icon),
-                    contentDescription = "Views",
-                    modifier = Modifier.size(20.dp),
-                    tint = Color.White
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.info_icon),
-                    contentDescription = "Views",
-                    modifier = Modifier.size(20.dp),
-                    tint = Color.White
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.view_dimension_icon),
-                    contentDescription = "Views",
-                    modifier = Modifier.size(20.dp),
-                    tint = Color.White
-                )
-            }
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = recent.title,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                modifier = Modifier.weight(1f)
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = {
-                        if (!isLiked) {
-                            viewModel.likeExperience(recent.id)
-                        }
-                    }
-                ) {
-                    Icon(
-                        imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                        contentDescription = "Like",
-                        tint = if (isLiked) Color.Red else Color.Black,
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                }
-
-                Text(
-                    text = likesCount.toString(),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-            }
-        }
-    }
-}
 
 
 @Preview(showBackground = true)
