@@ -1,66 +1,85 @@
 package com.example.aroundegyptapp.ui.theme.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.aroundegyptapp.data.model.Data
+import com.example.app.com.example.aroundegyptapp.data.model.recommended.Data
 import com.example.aroundegyptapp.data.repo.HomeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(private val repository: HomeRepository) : ViewModel() {
+    private val _allExperiences = MutableStateFlow<List<Data>>(emptyList())
+    private val _searchQuery = MutableStateFlow<List<Data>>(emptyList())
+    val searchResult: StateFlow<List<Data>> = _searchQuery
 
-    private val _recommended = MutableStateFlow<List<Data>>(emptyList())
-    val recommended: StateFlow<List<Data>> = _recommended
+    private val _likesMap = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val likesMap: StateFlow<Map<String, Int>> = _likesMap
 
-    private val _recent =
-        MutableStateFlow<List<com.example.aroundegyptapp.data.model.recent.Data>>(emptyList())
-    val recent: StateFlow<List<com.example.aroundegyptapp.data.model.recent.Data>> = _recent
+    val recommended: StateFlow<List<Data>> =
+        _allExperiences.map { list -> list.filter { it.recommended == 1 } }.stateIn(
+            viewModelScope, SharingStarted.Lazily, emptyList()
+        )
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery
+    val recent: StateFlow<List<Data>> =
+        _allExperiences.map { list -> list.filter { it.recommended == 0 } }.stateIn(
+            viewModelScope, SharingStarted.Lazily, emptyList()
+        )
+
+
     init {
-        fetchRecommended()
-        fetchRecents()
-        executeSearch()
+        fetchExperiences()
     }
 
-    private fun executeSearch() {
+
+    private fun fetchExperiences() {
         viewModelScope.launch {
-            searchQuery.collect { query ->
-                if (query.isNotEmpty()) {
-//                    try {
-//                        _searchQuery.value = repository.searchExperience(query)
-//                    } catch (e: Exception) {
-//                        // Handle error
-//                        e.message
-//                    }
+            try {
+                _allExperiences.value = repository.fetchExperiences()
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error fetching experiences: ${e.message}")
+            }
+        }
+    }
+
+
+    init {
+        fetchExperiences()
+    }
+
+    fun likeExperience(postId: String) {
+        viewModelScope.launch {
+            try {
+                val newLikes = repository.likeExperience(postId)
+                _likesMap.value = _likesMap.value.toMutableMap().apply {
+                    put(postId, newLikes)
                 }
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error liking post: ${e.message}")
+            }
+        }
+    }
+
+    fun executeSearch(query: String) {
+        viewModelScope.launch {
+            try {
+                val results = repository.searchExperience(query)
+                _searchQuery.value = results
+            } catch (e: Exception) {
+                e.message
             }
 
         }
     }
 
-    private fun fetchRecents() {
-        viewModelScope.launch {
-            try {
-                _recent.value = repository.fetchRecent()
-            } catch (e: Exception) {
-                // Handle error
-            }
-        }
-    }
-
-    private fun fetchRecommended() {
-        viewModelScope.launch {
-            try {
-                _recommended.value = repository.fetchRecommended()
-            } catch (e: Exception) {
-                // Handle error
-            }
-        }
+    fun clearSearch() {
+        _searchQuery.value = emptyList()
     }
 }

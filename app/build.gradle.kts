@@ -32,15 +32,12 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
-//    kapt {
-//        correctErrorTypes = true
-//    }
     buildFeatures {
         compose = true
     }
@@ -74,10 +71,13 @@ dependencies {
     implementation(libs.coroutines.android)
     implementation(libs.hilt)
     kapt(libs.hilt.compiler)
-    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+    implementation(libs.hilt.navigation.compose)
     implementation(libs.hilt.work)
     implementation(libs.work.runtime.ktx)
-    implementation("androidx.navigation:navigation-compose:2.7.5")
+    implementation(libs.coil.compose)
+    testImplementation(libs.mockk)
+    androidTestImplementation(libs.mockk.android)
+    testImplementation (libs.kotlinx.coroutines.test)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

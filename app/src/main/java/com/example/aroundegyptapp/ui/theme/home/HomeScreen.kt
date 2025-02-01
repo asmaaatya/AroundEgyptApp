@@ -1,105 +1,258 @@
+package com.example.aroundegyptapp.ui.theme.home
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.aroundegyptapp.data.model.Data
-import com.example.aroundegyptapp.ui.theme.home.HomeViewModel
+import coil.compose.AsyncImage
+import com.example.app.com.example.aroundegyptapp.data.model.recommended.Data
+import com.example.aroundegyptapp.R
 
 @Composable
 fun HomeScreen(navController: NavController) {
-    val postViewModel: HomeViewModel = hiltViewModel()
-    ExperienceScreen(postViewModel, navController)
+    val homeViewModel: HomeViewModel = hiltViewModel()
+    ExperienceScreen(homeViewModel, navController)
 }
 
 @Composable
-fun ExperienceScreen(postViewModel: HomeViewModel = hiltViewModel(), navController: NavController) {
-    val recommended by postViewModel.recommended.collectAsState()
-    val recent by postViewModel.recent.collectAsState()
+fun ExperienceScreen(homeViewModel: HomeViewModel = hiltViewModel(), navController: NavController) {
+    val recommended by homeViewModel.recommended.collectAsState()
+    val recent by homeViewModel.recent.collectAsState()
+    val results by homeViewModel.searchResult.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        SearchBar()
-        WelcomeMessage()
+        SearchBar(
+            viewModel = homeViewModel,
+            searchQuery = searchQuery,
+            onSearchQueryChange = { newQuery ->
+                searchQuery = newQuery
+            }
+        )
+
+        if (searchQuery.isNotEmpty()) {
+
+            if (results.isNotEmpty()) {
+                SearchResultsList(title = "Search Results", experiences = results, navController)
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No results found", color = Color.Gray)
+                }
+            }
+        } else {
+            WelcomeMessage()
+            RecommendedExperienceList(
+                title = "Recommended Experiences",
+                experiences = recommended,
+                navController
+            )
+            RecentExperienceList(title = "Most Recent", experiences = recent, navController)
+        }
+    }
+}
+
+@Composable
+fun SearchResultsList(
+    title: String,
+    experiences: List<Data>,
+    navController: NavController
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            "Recommended Experiences",
+            text = title,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 16.dp, top = 16.dp)
         )
-        if (recommended.isEmpty()) {
-            CircularProgressIndicator(modifier = Modifier.fillMaxSize())
+        if (experiences.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
         } else {
-            RecommendedList(recommended, navController)
+            LazyColumn(modifier = Modifier.padding(start = 10.dp)) {
+                items(experiences.size) { index ->
+                    RecommendedListItem(experiences[index], navController)
+                }
+            }
         }
+    }
+}
 
-        if (recent.isEmpty()) {
-            CircularProgressIndicator(modifier = Modifier.fillMaxSize())
+@Composable
+fun RecommendedExperienceList(
+    title: String,
+    experiences: List<Data>,
+    navController: NavController
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = title,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 16.dp, top = 16.dp)
+        )
+        if (experiences.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
         } else {
-            RecentList(recent)
+            LazyRow(modifier = Modifier.padding(start = 10.dp)) {
+                items(experiences.size) { index ->
+                    RecommendedListItem(experiences[index], navController)
+                }
+            }
         }
     }
 }
 
 @Composable
-fun RecommendedList(posts: List<Data>, navController: NavController) {
-    LazyRow(modifier = Modifier.padding(start = 10.dp)) {
-        items(posts.size) { post ->
-            RecommendedListItem(posts[post], navController)
+fun RecentExperienceList(
+    title: String,
+    experiences: List<Data>,
+    navController: NavController
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = title,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 16.dp, top = 16.dp)
+        )
+        if (experiences.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            LazyColumn(modifier = Modifier.padding(start = 10.dp)) {
+                items(experiences.size) { index ->
+                    RecommendedListItem(experiences[index], navController)
+                }
+            }
         }
     }
 }
 
-@Composable
-fun RecentList(recent: List<com.example.aroundegyptapp.data.model.recent.Data>) {
-    LazyColumn(modifier = Modifier.padding(start = 10.dp)) {
-        items(recent.size) { post ->
-            MostRecentListItem(recent[post])
-        }
-    }
-}
 
 @Composable
-fun SearchBar() {
+fun SearchBar(
+    viewModel: HomeViewModel,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit
+) {
+    var isSearching by remember { mutableStateOf(false) }
+
     TextField(
-        value = "",
-        onValueChange = {},
+        value = searchQuery,
+        onValueChange = { newQuery ->
+            onSearchQueryChange(newQuery)
+            isSearching = newQuery.isNotEmpty()
+            if (newQuery.isEmpty()) {
+                viewModel.clearSearch()
+            }
+        },
         placeholder = { Text("Try \"Luxor\"") },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(5.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 40.dp),
         shape = RoundedCornerShape(8.dp),
-        leadingIcon = { Icon(imageVector = Icons.Filled.Search, contentDescription = null) },
-        singleLine = true
+        leadingIcon = {
+            IconButton(onClick = {
+                if (searchQuery.isNotEmpty()) {
+                    viewModel.executeSearch(searchQuery)
+                }
+            }) {
+                Icon(imageVector = Icons.Filled.Search, contentDescription = "Search")
+            }
+        },
+        trailingIcon = {
+            if (searchQuery.isNotEmpty()) {
+                IconButton(onClick = {
+                    onSearchQueryChange("")
+                    viewModel.clearSearch()
+                    isSearching = false
+                }) {
+                    Icon(imageVector = Icons.Filled.Close, contentDescription = "Clear Search")
+                }
+            }
+        },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions.Default.copy(
+            imeAction = ImeAction.Search
+        ),
+        keyboardActions = KeyboardActions(
+            onSearch = {
+                if (searchQuery.isNotEmpty()) {
+                    viewModel.executeSearch(searchQuery)
+                }
+            }
+        )
     )
 }
 
@@ -116,43 +269,139 @@ fun WelcomeMessage() {
 }
 
 @Composable
-fun RecommendedListItem(post: Data, navController: NavController) {
-    Column(modifier = Modifier.padding(horizontal = 5.dp)) {
-        Card(
-            shape = RoundedCornerShape(12.dp),
+fun RecommendedListItem(
+    post: Data, navController: NavController,
+    viewModel: HomeViewModel = hiltViewModel()
+) {
+    val likesMap by viewModel.likesMap.collectAsState()
+
+    var isLiked by remember { mutableStateOf(false) }
+    var likesCount by remember { mutableIntStateOf(post.likes_no) }
+
+    LaunchedEffect(likesMap[post.id]) {
+        likesMap[post.id]?.let { updatedLikes ->
+            likesCount = updatedLikes
+            isLiked = true
+        }
+    }
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .clickable {
+            navController.navigate("details/${post.id}")
+        }) {
+        Box(
             modifier = Modifier
-                .width(320.dp)
-                .height(150.dp)
-                .padding(vertical = 8.dp)
-                .clickable {
-                    navController.navigate("details/${post.id}")
-                }
+                .fillMaxWidth()
+                .padding(end = 16.dp, top = 16.dp, bottom = 16.dp)
         ) {
-            Column {
+            AsyncImage(
+                model = post.cover_photo,
+                contentDescription = "Background Image",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp),
+                contentScale = ContentScale.Crop
+            )
 
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(post.views_no.toString(), fontSize = 12.sp, color = Color.Gray)
-
-                    }
-                }
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.view_icon),
+                    contentDescription = "Views",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.White
+                )
+                Text(
+                    text = post.views_no.toString(),
+                    fontSize = 12.sp,
+                    color = Color.White
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.gallery_icon),
+                    contentDescription = "Views",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.White
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.info_icon),
+                    contentDescription = "Views",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.White
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.view_dimension_icon),
+                    contentDescription = "Views",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.White
+                )
             }
         }
-        Row() {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
             Text(
-                post.title,
-                fontSize = 16.sp,
+                text = post.title,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 5.dp, top = 15.dp)
+                color = Color.Black,
             )
-            IconButton(onClick = {}) {
-                Icon(
-                    Icons.Default.FavoriteBorder,
-                    contentDescription = "Like",
-                    modifier = Modifier.padding(start = 20.dp)
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = {
+                        if (!isLiked) {
+                            viewModel.likeExperience(post.id)
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = "Like",
+                        tint = if (isLiked) Color.Red else Color.Black,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                }
+
+                Text(
+                    text = likesCount.toString(),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
                 )
             }
         }
@@ -160,40 +409,134 @@ fun RecommendedListItem(post: Data, navController: NavController) {
 }
 
 @Composable
-fun MostRecentListItem(recent: com.example.aroundegyptapp.data.model.recent.Data) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        Card(
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp)
-                .padding(vertical = 8.dp)
-        ) {
-            Column {
+fun MostRecentListItem(
+    recent: com.example.aroundegyptapp.data.model.recent.Data, navController: NavController,
+    viewModel: HomeViewModel = hiltViewModel()
+) {
+    val likesMap by viewModel.likesMap.collectAsState()
 
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(recent.views_no.toString(), fontSize = 12.sp, color = Color.Gray)
+    var isLiked by remember { mutableStateOf(false) }
+    var likesCount by remember { mutableIntStateOf(recent.likes_no) }
 
-                    }
-                }
+    LaunchedEffect(likesMap[recent.id]) {
+        likesMap[recent.id]?.let { updatedLikes ->
+            likesCount = updatedLikes
+            isLiked = true
+        }
+    }
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .clickable {
+            navController.navigate("details/${recent.id}")
+        }) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            AsyncImage(
+                model = recent.cover_photo,
+                contentDescription = "Background Image",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp),
+                contentScale = ContentScale.Crop
+            )
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.view_icon),
+                    contentDescription = "Views",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.White
+                )
+                Text(
+                    text = recent.views_no.toString(),
+                    fontSize = 12.sp,
+                    color = Color.White
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.gallery_icon),
+                    contentDescription = "Views",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.White
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.info_icon),
+                    contentDescription = "Views",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.White
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.view_dimension_icon),
+                    contentDescription = "Views",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.White
+                )
             }
         }
-        Row() {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
             Text(
-                recent.title,
-                fontSize = 16.sp,
+                text = recent.title,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 5.dp, top = 15.dp)
+                color = Color.Black,
+                modifier = Modifier.weight(1f)
             )
-            IconButton(onClick = {}) {
-                Icon(
-                    Icons.Default.FavoriteBorder,
-                    contentDescription = "Like",
-                    modifier = Modifier.padding(start = 20.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = {
+                        if (!isLiked) {
+                            viewModel.likeExperience(recent.id)
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = "Like",
+                        tint = if (isLiked) Color.Red else Color.Black,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                }
+
+                Text(
+                    text = likesCount.toString(),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
                 )
             }
         }
@@ -201,8 +544,11 @@ fun MostRecentListItem(recent: com.example.aroundegyptapp.data.model.recent.Data
 }
 
 
-//@Preview(showBackground = true)
-//@Composable
-//fun PreviewExperienceScreen() {
-//    ExperienceScreen()
-//}
+@Preview(showBackground = true)
+@Composable
+fun PreviewExperienceScreen() {
+    ExperienceScreen(
+        homeViewModel = hiltViewModel(),
+        navController = NavController(LocalContext.current)
+    )
+}

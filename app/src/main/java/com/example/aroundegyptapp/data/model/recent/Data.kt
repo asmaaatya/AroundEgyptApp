@@ -1,5 +1,15 @@
 package com.example.aroundegyptapp.data.model.recent
 
+import com.example.aroundegyptapp.data.model.City
+import com.example.aroundegyptapp.data.model.Era
+import com.example.aroundegyptapp.data.model.GmapLocation
+import com.example.aroundegyptapp.data.model.OpeningHours
+import com.example.aroundegyptapp.data.model.Period
+import com.example.aroundegyptapp.data.model.Review
+import com.example.aroundegyptapp.data.model.Tag
+import com.example.aroundegyptapp.data.model.TicketPrice
+import com.example.aroundegyptapp.data.model.TranslatedOpeningHours
+
 data class Data(
     val address: String,
     val audio_url: String,
